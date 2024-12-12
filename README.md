@@ -19,7 +19,7 @@ Each model is evaluated via following metrics:
 
 We observe the performance of each model in solving linear inverse problems:
 - Image inpainting
-- Super-resolution(x4)
+- Super-resolution(x4, x8, x16)
 - Gaussian blur removal
 
 We use pre-trained [DDIMs](https://arxiv.org/abs/2010.02502) given by [DPS Repo](https://github.com/DPS2022/diffusion-posterior-sampling).
