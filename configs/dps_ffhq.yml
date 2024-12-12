@@ -1,5 +1,5 @@
 data:
-    dataset: "ImageNet"
+    dataset: "FFHQ"
     image_size: 256
     channels: 3
     logit_transform: false
@@ -7,23 +7,23 @@ data:
     gaussian_dequantization: false
     random_flip: true
     rescaled: true
-    num_workers: 32
-    subset_1k: True
+    num_workers: 16
+    subset_1k: false
     out_of_dist: False
 
 model:
-    type: "openai"
+    type: "dps_ffhq"
     in_channels: 3
     out_channels: 3
-    num_channels: 256
+    num_channels: 128
     num_heads: 4
-    num_res_blocks: 2
-    attention_resolutions: "32,16,8"
+    num_res_blocks: 1
+    attention_resolutions: "16"
     dropout: 0.0
     resamp_with_conv: True
     learn_sigma: True
     use_scale_shift_norm: true
-    use_fp16: true
+    use_fp16: false
     resblock_updown: true
     num_heads_upsample: -1
     var_type: 'fixedsmall'

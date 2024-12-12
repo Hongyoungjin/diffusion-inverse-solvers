@@ -133,7 +133,7 @@ def get_dataset(args, config):
             )
             dataset = test_dataset
     
-    elif config.data.dataset == "CelebA_HQ" or config.data.dataset == 'FFHQ':
+    elif config.data.dataset == "CelebA_HQ":
         if config.data.out_of_dist:
             dataset = torchvision.datasets.ImageFolder(
                 os.path.join(args.exp, "datasets", "ood_celeba"),
@@ -158,6 +158,26 @@ def get_dataset(args, config):
                 indices[int(num_items * 0.9) :],
             )
             test_dataset = Subset(dataset, test_indices)
+            
+    elif config.data.dataset == "FFHQ":
+        
+        dataset = torchvision.datasets.ImageFolder(
+            os.path.join(args.exp, "datasets", "ffhq"),
+            transform=transforms.Compose([transforms.Resize([config.data.image_size, config.data.image_size]),
+                                            transforms.ToTensor()])
+        )
+        num_items = len(dataset)
+        indices = list(range(num_items))
+        # random_state = np.random.get_state()
+        # np.random.seed(2019)
+        # np.random.shuffle(indices)
+        # np.random.set_state(random_state)
+        # train_indices, test_indices = (
+        #     indices[: int(num_items * 0.9)],
+        #     indices[int(num_items * 0.9) :],
+        # )
+        test_indices = indices[: int(num_items * 0.1)]
+        test_dataset = Subset(dataset, test_indices)
 
     elif config.data.dataset == 'ImageNet':
         # only use validation dataset here

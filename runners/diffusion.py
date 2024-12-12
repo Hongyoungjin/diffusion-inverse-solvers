@@ -19,6 +19,9 @@ from guided_diffusion.unet import UNetModel
 from guided_diffusion.script_util import create_model, create_classifier, classifier_defaults, args_to_dict
 import random
 
+import lpips
+from skimage.metrics import structural_similarity as ssim
+
 def get_beta_schedule(beta_schedule, *, beta_start, beta_end, num_diffusion_timesteps):
     def sigmoid(x):
         return 1 / (np.exp(-x) + 1)
@@ -115,6 +118,26 @@ class Diffusion(object):
                 raise ValueError
             model.load_state_dict(torch.load(ckpt, map_location=self.device))
             model.to(self.device)
+            model = torch.nn.DataParallel(model)
+            
+        elif self.config.model.type == 'dps_imagenet':
+            config_dict = vars(self.config.model)
+            model = create_model(**config_dict)
+            ckpt = os.path.join(self.args.exp, 'logs/imagenet/imagenet256.pt')
+            
+            model.load_state_dict(torch.load(ckpt, map_location=self.device))
+            model.to(self.device)
+            model.eval()
+            model = torch.nn.DataParallel(model)
+            
+        elif self.config.model.type == 'dps_ffhq':
+            config_dict = vars(self.config.model)
+            model = create_model(**config_dict)
+            ckpt = os.path.join(self.args.exp, 'logs/ffhq/ffhq_10m.pt')
+            
+            model.load_state_dict(torch.load(ckpt, map_location=self.device))
+            model.to(self.device)
+            model.eval()
             model = torch.nn.DataParallel(model)
 
         elif self.config.model.type == 'openai':
@@ -214,7 +237,8 @@ class Diffusion(object):
                 mask = torch.from_numpy(loaded).to(self.device).reshape(-1)
                 missing_r = torch.nonzero(mask == 0).long().reshape(-1) * 3
             else:
-                missing_r = torch.randperm(config.data.image_size**2)[:config.data.image_size**2 // 2].to(self.device).long() * 3
+                inpaint_ratio = args.inpaint_ratio
+                missing_r = torch.randperm(config.data.image_size**2)[:int(config.data.image_size**2 * inpaint_ratio)].to(self.device).long() * 3
             missing_g = missing_r + 1
             missing_b = missing_g + 1
             missing = torch.cat([missing_r, missing_g, missing_b], dim=0)
@@ -245,7 +269,9 @@ class Diffusion(object):
             H_funcs = Deblurring(torch.Tensor([1/9] * 9).to(self.device), config.data.channels, self.config.data.image_size, self.device)
         elif deg == 'deblur_gauss':
             from functions.svd_replacement import Deblurring
-            sigma = 10
+            # sigma = 10
+            # sigma = 1
+            sigma = self.args.deblur_sigma
             pdf = lambda x: torch.exp(torch.Tensor([-0.5 * (x/sigma)**2]))
             kernel = torch.Tensor([pdf(-2), pdf(-1), pdf(0), pdf(1), pdf(2)]).to(self.device)
             H_funcs = Deblurring(kernel / kernel.sum(), config.data.channels, self.config.data.image_size, self.device)
@@ -274,7 +300,14 @@ class Diffusion(object):
         print(f'Start from {args.subset_start}')
         idx_init = args.subset_start
         idx_so_far = args.subset_start
+        # PSNR
         avg_psnr = 0.0
+        # LPIPS
+        loss_fn_vgg = lpips.LPIPS(net='vgg')
+        avg_lpips = 0.0
+        # SSIM
+        avg_ssim = 0.0
+        
         pbar = tqdm.tqdm(val_loader)
         for x_orig, classes in pbar:
             x_orig = x_orig.to(self.device)
@@ -317,18 +350,42 @@ class Diffusion(object):
                         x[i][j], os.path.join(self.args.image_folder, f"{idx_so_far + j}_{i}.png")
                     )
                     if i == len(x)-1 or i == -1:
+                        # PSNR
                         orig = inverse_data_transform(config, x_orig[j])
                         mse = torch.mean((x[i][j].to(self.device) - orig) ** 2)
                         psnr = 10 * torch.log10(1 / mse)
                         avg_psnr += psnr
+                        # LPIPS
+                        lpips_val = loss_fn_vgg(x[i][j].cpu(), orig.cpu())
+                        avg_lpips += lpips_val
+                        # SSIM
+                        ssim_est = x[i][j].cpu().numpy()
+                        ssim_orig = orig.cpu().numpy()
+                        ssim_val, _ = ssim(ssim_est, ssim_orig, full=True, channel_axis=0, 
+                                        data_range=(int(np.max(ssim_est))) - int(np.min(ssim_est)))
+                        avg_ssim += ssim_val
 
             idx_so_far += y_0.shape[0]
 
-            pbar.set_description("PSNR: %.2f" % (avg_psnr / (idx_so_far - idx_init)))
+            pbar.set_description(f"PSNR: {avg_psnr.item() / (idx_so_far - idx_init):.2f} | \
+                                 LPIPS: {avg_lpips.item() / (idx_so_far - idx_init):.2f} | \
+                                   SSIM: {avg_ssim.item() / (idx_so_far - idx_init):.2f}")
 
         avg_psnr = avg_psnr / (idx_so_far - idx_init)
+        avg_lpips = avg_lpips / (idx_so_far - idx_init)
+        avg_ssim = avg_ssim / (idx_so_far - idx_init)
         print("Total Average PSNR: %.2f" % avg_psnr)
+        print("Total Average LPIPS: %.2f" % avg_lpips)
+        print("Total Average SSIM: %.2f" % avg_ssim)
         print("Number of samples: %d" % (idx_so_far - idx_init))
+        
+        with open(os.path.join(args.image_folder, "result_summary.txt"), 'w') as f:
+            f.write("Super-resolution Degradation Scale: " + args.deg + "\n")
+            f.write("Deblur Gaussian Sigma: %.2f \n" % args.deblur_sigma)
+            f.write("Inpaint Ratio: %.2f \n" % args.inpaint_ratio)
+            f.write("Total Average PSNR: %.2f \n" % avg_psnr)
+            f.write("Total Average LPIPS: %.2f \n" % avg_lpips)
+            f.write("Total Average SSIM: %.2f" % avg_ssim)
 
     def sample_image(self, x, model, H_funcs, y_0, sigma_0, last=True, cls_fn=None, classes=None):
         skip = self.num_timesteps // self.args.timesteps

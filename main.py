@@ -58,13 +58,13 @@ def parse_args_and_config():
         help="No interaction. Suitable for Slurm Job launcher",
     )
     parser.add_argument(
-        "--timesteps", type=int, default=1000, help="number of steps involved"
+        "--timesteps", type=int, default=20, help="number of steps involved"
     )
     parser.add_argument(
         "--deg", type=str, required=True, help="Degradation"
     )
     parser.add_argument(
-        "--sigma_0", type=float, required=True, help="Sigma_0"
+        "--sigma_0", type=float, help="Sigma_0", default=0.05
     )
     parser.add_argument(
         "--eta", type=float, default=0.85, help="Eta"
@@ -78,6 +78,13 @@ def parse_args_and_config():
     parser.add_argument(
         '--subset_end', type=int, default=-1
     )
+    parser.add_argument(
+        '--deblur_sigma', type=float, default=1.0
+    )
+    parser.add_argument(
+        '--inpaint_ratio', type=float, default=0.5
+        )
+
 
     args = parser.parse_args()
     args.log_path = os.path.join(args.exp, "logs", args.doc)

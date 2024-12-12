@@ -7,12 +7,12 @@ data:
     gaussian_dequantization: false
     random_flip: true
     rescaled: true
-    num_workers: 32
-    subset_1k: False
-    out_of_dist: False
+    num_workers: 16
+    subset_1k: false
+    out_of_dist: true
 
 model:
-    type: "openai"
+    type: "dps_imagenet"
     in_channels: 3
     out_channels: 3
     num_channels: 256
@@ -29,20 +29,8 @@ model:
     var_type: 'fixedsmall'
     num_head_channels: 64
     image_size: 256
-    class_cond: True
+    class_cond: false
     use_new_attention_order: false
-
-classifier:
-    image_size: 256
-    classifier_attention_resolutions: "32,16,8"
-    classifier_depth: 2
-    classifier_pool: "attention"
-    classifier_resblock_updown: True
-    classifier_width: 128
-    classifier_use_scale_shift_norm: True
-    classifier_scale: 1.0
-    classifier_use_fp16: True
-
 
 diffusion:
     beta_schedule: linear
