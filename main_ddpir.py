@@ -235,7 +235,7 @@ def main():
             num_channels=128,
             num_res_blocks=1,
             attention_resolutions="16",
-        ) if config.model_name == 'diffusion_ffhq_10m' \
+        ) if config.model_name == 'ffhq_10m' \
         else dict(
             model_path=config.model_path,
             num_channels=256,
