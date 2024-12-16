@@ -98,6 +98,15 @@ FFHQ inpainting with 90% inpainting ratio:
 python main.py --ni --config dps_ffhq.yml --doc ffhq --deg inp --inpaint_ratio 0.9 -i ffhq_inp_ratio_0.9
 ```
 
+For DiffPIR Inference Code:
+Adjust the task parameter and your dataset name accordingly.
+```python
+python main_ddpir.py --opt configs/sisr.yaml # SR
+python main_ddpir.py --opt configs/deblur.yaml # deblur
+python main_ddpir.py --opt configs/inpaint.yaml # inpainting
+python main_ddpir.py --opt configs/shot_noise.yaml # denoise
+```
+
 ## References and Acknowledgements
 ```
 # DDRM
