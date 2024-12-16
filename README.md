@@ -83,19 +83,16 @@ The config files contain a setting controlling whether to test on samples from t
 ### Images for Demonstration Purposes
 A list of images for demonstration purposes can be found here: [https://github.com/jiamings/ddrm-exp-datasets](https://github.com/jiamings/ddrm-exp-datasets). Place them under the `<exp>/datasets` folder, and these commands can be excecuted directly:
 
-FFHQ noisy 4x super-resolution:
+For DDRM Inference Code:
 ```
-python main.py --ni --config dps_ffhq.yml --doc ffhq --deg sr4 -i ffhq_sr4
-```
+# FFHQ noisy 4x super-resolution
+python main.py --ni --config dps_ffhq.yml --doc ffhq --deg sr4 -i ffhq_sr4 
 
-FFHQ Gaussian deblurring with 1 Gaussian deblur sigma:
-```
+# FFHQ Gaussian deblurring with 1 Gaussian deblur sigma
 python main.py --ni --config dps_ffhq.yml --doc ffhq --deg deblur_gauss --deblur_sigma 1 -i ffhq_deblur_sigma_1
-```
 
-FFHQ inpainting with 90% inpainting ratio:
-```
-python main.py --ni --config dps_ffhq.yml --doc ffhq --deg inp --inpaint_ratio 0.9 -i ffhq_inp_ratio_0.9
+# LSUN Bedroom dataset inpainting with 90% inpainting ratio
+python main.py --ni --config dps_ood_bedroom.yml --doc ood --deg inp --inpaint_ratio 0.9 -i ood_inp_ratio_0.9
 ```
 
 For DiffPIR Inference Code:
