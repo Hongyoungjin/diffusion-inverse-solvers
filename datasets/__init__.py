@@ -116,7 +116,11 @@ def get_dataset(args, config):
                 transform=transforms.Compose([partial(center_crop_arr, image_size=config.data.image_size),
                 transforms.ToTensor()])
             )
-            test_dataset = dataset
+            num_items = len(dataset)
+            indices = list(range(num_items))
+            test_indices = indices[: int(num_items * 0.1)]
+            test_dataset = Subset(dataset, test_indices)
+            # test_dataset = dataset
         else:
             train_folder = "{}_train".format(config.data.category)
             val_folder = "{}_val".format(config.data.category)

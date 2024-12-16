@@ -1,5 +1,5 @@
 data:
-    dataset: "ImageNet"
+    dataset: "LSUN" # "ImageNet"
     image_size: 256
     channels: 3
     logit_transform: false
@@ -10,6 +10,9 @@ data:
     num_workers: 16
     subset_1k: false
     out_of_dist: true
+
+
+    category: "bedroom"
 
 model:
     type: "dps_imagenet"
@@ -41,3 +44,14 @@ diffusion:
 sampling:
     batch_size: 8
     last_only: True
+
+# python main.py --ni --config dps_ood_bedroom.yml --doc ood --deg sr8 -i ood_sr8
+# python main.py --ni --config dps_ood_bedroom.yml --doc ood --deg sr16 -i ood_sr16
+
+# python main.py --ni --config dps_ood_bedroom.yml --doc ood --deg deblur_gauss --deblur_sigma 1 -i ood_deblur_sigma_1
+# python main.py --ni --config dps_ood_bedroom.yml --doc ood --deg deblur_gauss --deblur_sigma 3 -i ood_deblur_sigma_3
+# python main.py --ni --config dps_ood_bedroom.yml --doc ood --deg deblur_gauss --deblur_sigma 5 -i ood_deblur_sigma_5
+
+# python main.py --ni --config dps_ood_bedroom.yml --doc ood --deg inp --inpaint_ratio 0.9 -i ood_inp_ratio_0.9
+# python main.py --ni --config dps_ood_bedroom.yml --doc ood --deg inp --inpaint_ratio 0.8 -i ood_inp_ratio_0.8
+# python main.py --ni --config dps_ood_bedroom.yml --doc ood --deg inp --inpaint_ratio 0.7 -i ood_inp_ratio_0.7

@@ -96,31 +96,41 @@ class Diffusion(object):
     def sample(self):
         cls_fn = None
         if self.config.model.type == 'simple':    
-            model = Model(self.config)
+            # model = Model(self.config)
             # This used the pretrained DDPM model, see https://github.com/pesser/pytorch_diffusion
             if self.config.data.dataset == "CIFAR10":
                 name = "cifar10"
             elif self.config.data.dataset == "LSUN":
                 name = f"lsun_{self.config.data.category}"
+                
+                config_dict = vars(self.config.model)
+                model = create_model(**config_dict)
+                ckpt = os.path.join(self.args.exp, 'logs/imagenet/imagenet256.pt')
+                
+                model.load_state_dict(torch.load(ckpt, map_location=self.device))
+                model.to(self.device)
+                model.eval()
+                model = torch.nn.DataParallel(model)
+                
             elif self.config.data.dataset == 'CelebA_HQ':
                 name = 'celeba_hq'
             else:
                 raise ValueError
-            if name != 'celeba_hq':
-                ckpt = get_ckpt_path(f"ema_{name}", prefix=self.args.exp)
-                print("Loading checkpoint {}".format(ckpt))
-            elif name == 'celeba_hq':
-                #ckpt = '~/.cache/diffusion_models_converted/celeba_hq.ckpt'
-                ckpt = os.path.join(self.args.exp, "logs/celeba/celeba_hq.ckpt")
-                if not os.path.exists(ckpt):
-                    download('https://image-editing-test-12345.s3-us-west-2.amazonaws.com/checkpoints/celeba_hq.ckpt', ckpt)
-            else:
-                raise ValueError
-            model.load_state_dict(torch.load(ckpt, map_location=self.device))
-            model.to(self.device)
-            model = torch.nn.DataParallel(model)
+            # if name != 'celeba_hq':
+            #     ckpt = get_ckpt_path(f"ema_{name}", prefix=self.args.exp)
+            #     print("Loading checkpoint {}".format(ckpt))
+            # elif name == 'celeba_hq':
+            #     #ckpt = '~/.cache/diffusion_models_converted/celeba_hq.ckpt'
+            #     ckpt = os.path.join(self.args.exp, "logs/celeba/celeba_hq.ckpt")
+            #     if not os.path.exists(ckpt):
+            #         download('https://image-editing-test-12345.s3-us-west-2.amazonaws.com/checkpoints/celeba_hq.ckpt', ckpt)
+            # else:
+            #     raise ValueError
+            # model.load_state_dict(torch.load(ckpt, map_location=self.device))
+            # model.to(self.device)
+            # model = torch.nn.DataParallel(model)
             
-        elif self.config.model.type == 'dps_imagenet':
+        elif self.config.model.type == 'dps_ood_bedroom':
             config_dict = vars(self.config.model)
             model = create_model(**config_dict)
             ckpt = os.path.join(self.args.exp, 'logs/imagenet/imagenet256.pt')
@@ -129,6 +139,24 @@ class Diffusion(object):
             model.to(self.device)
             model.eval()
             model = torch.nn.DataParallel(model)
+            
+            for name, param in model.named_parameters():
+                print(f"Parameter: {name}, dtype: {param.dtype}")
+            
+        elif self.config.model.type == 'dps_imagenet':
+            config_dict = vars(self.config.model)
+            model = create_model(**config_dict)
+            ckpt = os.path.join(self.args.exp, 'logs/imagenet/imagenet256.pt')
+            
+            print(self.config.model.use_fp16)
+            model.load_state_dict(torch.load(ckpt, map_location=self.device))
+            model.to(self.device)
+            model.eval()
+            model.convert_to_fp16()
+            model = torch.nn.DataParallel(model)
+            
+            for name, param in model.named_parameters():
+                print(f"Parameter: {name}, dtype: {param.dtype}")
             
         elif self.config.model.type == 'dps_ffhq':
             config_dict = vars(self.config.model)
@@ -362,7 +390,7 @@ class Diffusion(object):
                         ssim_est = x[i][j].cpu().numpy()
                         ssim_orig = orig.cpu().numpy()
                         ssim_val, _ = ssim(ssim_est, ssim_orig, full=True, channel_axis=0, 
-                                        data_range=(int(np.max(ssim_est))) - int(np.min(ssim_est)))
+                                        data_range=(np.max(ssim_est)) - np.min(ssim_est))
                         avg_ssim += ssim_val
 
             idx_so_far += y_0.shape[0]

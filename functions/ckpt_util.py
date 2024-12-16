@@ -15,7 +15,7 @@ URL_MAP = {
 CKPT_MAP = {
     "cifar10": "diffusion_cifar10_model/model-790000.ckpt",
     "ema_cifar10": "ema_diffusion_cifar10_model/model-790000.ckpt",
-    "lsun_bedroom": "diffusion_lsun_bedroom_model/model-2388000.ckpt",
+    "lsun_bedroom": "diffusion_lsun_bedroom_model/mo del-2388000.ckpt",
     "ema_lsun_bedroom": "ema_diffusion_lsun_bedroom_model/model-2388000.ckpt",
     "lsun_cat": "diffusion_lsun_cat_model/model-1761000.ckpt",
     "ema_lsun_cat": "ema_diffusion_lsun_cat_model/model-1761000.ckpt",
